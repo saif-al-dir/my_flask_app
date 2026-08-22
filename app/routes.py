@@ -1,8 +1,11 @@
 import importlib
+import requests  # type: ignore[import-not-found]
 from urllib.request import urlopen
 from flask import Blueprint, render_template, request, redirect, url_for  # type: ignore[import-not-found]
 from app.models import Feed
 from app import db
+
+feedparser = importlib.import_module('feedparser')
 
 main = Blueprint('main', __name__)
 
@@ -22,14 +25,13 @@ def home():
 
     for feed in feeds:
         try:
-            # Parse the downloaded content
-            with urlopen(feed.url, timeout=10) as response:
-                parsed = importlib.import_module('feedparser').parse(response.read())
+            response = requests.get(feed.url, timeout=10)
+            response.raise_for_status()
+            parsed = feedparser.parse(response.content)
             
-            # Check if the feed was parsed successfully
             if not parsed.bozo and parsed.entries:
                 articles = []
-                for entry in parsed.entries[:5]: # Get latest 5 articles
+                for entry in parsed.entries[:5]:
                     summary = entry.get('summary', '')
                     articles.append({
                         'title': entry.title,
@@ -41,12 +43,20 @@ def home():
                     categorized_articles[feed.category] = []
                     
                 categorized_articles[feed.category].append({
+                    'feed_id': feed.id, # <--- ADDED THIS for the delete button
                     'feed_title': parsed.feed.get('title', 'Unknown Feed'),
                     'articles': articles
                 })
         except Exception as e:
-            # If a feed fails to load, print an error to the terminal but keep the site running
             print(f"Error fetching {feed.url}: {e}")
             continue
 
     return render_template('index.html', categorized_articles=categorized_articles)
+
+# --- NEW DELETE ROUTE ---
+@main.route('/delete/<int:feed_id>', methods=['POST'])
+def delete_feed(feed_id):
+    feed = Feed.query.get_or_404(feed_id)
+    db.session.delete(feed)
+    db.session.commit()
+    return redirect(url_for('main.home'))

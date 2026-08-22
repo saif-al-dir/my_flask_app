@@ -44,6 +44,12 @@
                 <h5 class="text-muted mt-4">{{ feed.feed_title }}</h5>
                 <div class="row">
                     {% for article in feed.articles %}
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <h5 class="text-muted mb-0">{{ feed.feed_title }}</h5>
+                            <form action="{{ url_for('main.delete_feed', feed_id=feed.feed_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this feed?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete Feed</button>
+                            </form>
+                        </div>
                         <div class="col-md-4 mb-3">
                             <div class="card h-100 shadow-sm border-0">
                                 <div class="card-body">
