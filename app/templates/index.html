@@ -54,7 +54,7 @@
                             <div class="card h-100 shadow-sm border-0">
                                 <div class="card-body">
                                     <h6 class="card-title">
-                                        <a href="{{ article.link }}" target="_blank" class="text-decoration-none text-dark">
+                                        <a href="{{ url_for('main.read_article', url=article.link) }}" class="text-decoration-none text-dark">
                                             {{ article.title }}
                                         </a>
                                     </h6>
