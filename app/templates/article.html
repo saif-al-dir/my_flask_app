@@ -20,9 +20,13 @@
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
                         <h1 class="mb-3">{{ title }}</h1>
+                        
+                        {% if image_url %}
+                            <img src="{{ image_url }}" class="img-fluid rounded mb-4" alt="Article Image" style="max-height: 400px; object-fit: cover; width: 100%;">
+                        {% endif %}
+
                         <a href="{{ original_url }}" target="_blank" class="btn btn-sm btn-outline-secondary mb-4">View Original Source</a>
                         
-                        <!-- Display the article text -->
                         <div class="article-content" style="font-size: 1.1rem; line-height: 1.8; color: #333;">
                             {% for paragraph in content.split('\n\n') %}
                                 <p>{{ paragraph }}</p>
