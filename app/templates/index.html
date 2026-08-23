@@ -3,22 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyDevil RSS Reader</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+    <title>SAIF RSS Reader</title>
+    <link rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
 
-    <nav class="navbar navbar-dark bg-dark mb-4 shadow-sm">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <nav class="navbar navbar-dark bg-dark mb-4 shadow-sm sticky-top">
         <div class="container d-flex justify-content-between">
-            <a class="navbar-brand fw-bold" href="/">📰 MyDevil RSS Reader</a>
+            <a class="navbar-brand fw-bold" href="/">📰 SAIF RSS Reader</a>
             <div>
-                <a href="/export_opml" class="btn btn-sm btn-outline-light">Export OPML</a>
-                <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#importModal">Import OPML</button>
+                <a href="/refresh" class="btn btn-sm btn-success"><i class="bi bi-arrow-clockwise"></i> Refresh</a>
+                <a href="/export_opml" class="btn btn-sm btn-outline-light">Export</a>
+                <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
             </div>
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container flex-grow-1">
         <!-- Add Feed Form -->
         <div class="card mb-4 shadow-sm border-0">
             <div class="card-body">
@@ -39,41 +44,78 @@
             </div>
         </div>
 
-        <!-- Display Feeds -->
-        {% for category, feeds in categorized_articles.items() %}
-            <h3 class="mt-5 mb-3 border-bottom pb-2 text-uppercase fw-bold text-secondary">{{ category }}</h3>
-            
-            {% for feed in feeds %}
-                <div class="d-flex justify-content-between align-items-center mt-4">
-                    <h5 class="text-muted mb-0">{{ feed.feed_title }}</h5>
-                    <form action="{{ url_for('main.delete_feed', feed_id=feed.feed_id) }}" method="POST" onsubmit="return confirm('Delete this feed and all its articles?');">
-                        <button type="submit" class="btn btn-danger btn-sm">Delete Feed</button>
-                    </form>
-                </div>
-                <div class="row">
-                    {% for article in feed.articles %}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 shadow-sm border-0">
-                                <div class="card-body">
-                                    <h6 class="card-title">
-                                        <a href="{{ url_for('main.read_article', url=article.link) }}" class="text-decoration-none text-dark">
-                                            {{ article.title }}
-                                        </a>
-                                    </h6>
-                                    <p class="card-text small text-muted">{{ article.summary|striptags }}</p>
-                                    <p class="card-text small text-end"><small class="text-muted">{{ article.published_at.strftime('%b %d, %H:%M') }}</small></p>
+        <!-- Elegant Pill Tabs for Categories -->
+        {% if categorized_articles %}
+        <ul class="nav nav-pills nav-fill mb-4 pb-2 border-bottom" id="categoryTabs" role="tablist">
+            {% for category, feeds in categorized_articles.items() %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if loop.first %}active{% endif %}" 
+                            id="cat-{{ loop.index }}-tab" 
+                            data-bs-toggle="pill" 
+                            data-bs-target="#cat-{{ loop.index }}" 
+                            type="button" role="tab">
+                        {{ category }}
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="categoryTabsContent">
+            {% for category, feeds in categorized_articles.items() %}
+                <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="cat-{{ loop.index }}" role="tabpanel">
+                    {% for feed in feeds %}
+                        <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+                            <h5 class="text-muted mb-0"><i class="bi bi-rss-fill"></i> {{ feed.feed_title }}</h5>
+                            <form action="{{ url_for('main.delete_feed', feed_id=feed.feed_id) }}" method="POST" onsubmit="return confirm('Delete this feed and all its articles?');">
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                        <div class="row">
+                            {% for article in feed.articles %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100 shadow-sm border-0 {% if article.is_read %}opacity-50{% endif %}">
+                                        {% if article.image_url %}
+                                            <img src="{{ article.image_url }}" class="card-img-top" alt="Article Image" style="height: 180px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
+                                                <i class="bi bi-newspaper text-secondary" style="font-size: 3rem;"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <a href="{{ url_for('main.read_article', url=article.link) }}" class="text-decoration-none {% if article.is_read %}text-muted{% else %}text-dark{% endif %}">
+                                                    {{ article.title }}
+                                                </a>
+                                            </h6>
+                                            <p class="card-text small text-muted">{{ article.summary|striptags|truncate(100) }}</p>
+                                        </div>
+                                        <div class="card-footer bg-white border-0">
+                                            <small class="text-muted"><i class="bi bi-clock"></i> {{ article.published_at.strftime('%b %d, %H:%M') }}</small>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            {% endfor %}
                         </div>
                     {% endfor %}
                 </div>
             {% endfor %}
+        </div>
         {% else %}
             <div class="text-center text-muted mt-5">
-                <p>No feeds added yet. Add an RSS URL above to get started!</p>
+                <i class="bi bi-inbox" style="font-size: 4rem;"></i>
+                <p class="mt-3">No feeds added yet. Add an RSS URL above to get started!</p>
             </div>
-        {% endfor %}
+        {% endif %}
     </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 mt-auto py-4">
+        <div class="container text-center">
+            <p class="mb-0">📰 SAIF RSS Reader &copy; {{ current_year }}</p>
+            <small>Powered by Flask</small>
+        </div>
+    </footer>
 
     <!-- Import OPML Modal -->
     <div class="modal fade" id="importModal" tabindex="-1">
@@ -95,7 +137,6 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS for Modal -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

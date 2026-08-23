@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from app import db
 
 class Feed(db.Model):
@@ -12,6 +12,8 @@ class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     feed_id = db.Column(db.Integer, db.ForeignKey('feed.id'))
     title = db.Column(db.String(500))
-    link = db.Column(db.String(500), unique=True) # Unique prevents duplicate articles
+    link = db.Column(db.String(500), unique=True)
     summary = db.Column(db.Text)
-    published_at = db.Column(db.DateTime, default=datetime.utcnow)
+    image_url = db.Column(db.String(500), nullable=True) # NEW: Store image URL
+    is_read = db.Column(db.Boolean, default=False)       # NEW: Track if read
+    published_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
